@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Lesson Store</title>
+
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+        <link rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+        <style>
+
+            body{
+                font-family: Arial, sans-serif;
+                margin:20px;
+            }
+
+            .lesson{
+                border:1px solid #ddd;
+                padding:15px;
+                margin-bottom:15px;
+                border-radius:10px;
+            }
+
+            button{
+                padding:8px;
+                margin-top:5px;
+            }
+
+        </style>
+
+    </head>
+
+    <body>
+
+        <div id="lessonstore">
+
+            <!-- LESSON PAGE -->
+
+            <div v-if="showLesson">
+
+                <h1>{{ message }}</h1>
+
+                <button
+                    @click="toggleCheckout" :disabled="cartItemCount === 0">
+                    <i class="fa fa-shopping-cart"></i>
+                    Checkout ({{ cartItemCount }})
+                </button>
+
+                <hr>
+
+                <div
+                    class="lesson"
+                    v-for="lesson in sortedLessons"
+                    :key="lesson.id">
+                    <i
+                        :class="lesson.icon"
+                        style="font-size:40px">
+                    </i>
+
+                    <h2>{{ lesson.subject }}</h2>
+
+                    <p>ID: {{ lesson.id }}</p>
+
+                    <p>Location: {{ lesson.location }}</p>
+
+                    <p>Price: Rs {{ lesson.price }}</p>
+
+                    <p>
+                        {{ lesson.spaces }}
+                        spaces available
+                    </p>
+
+                    <p>
+                        {{ cartLessonCount(lesson.id) }}
+                        in cart
+                    </p>
+
+                    <button @click="addItem(lesson)":disabled="!canAddToCart(lesson)">Add To Cart</button>
+
+                </div>
+
+            </div>
+
+            <!-- CHECKOUT PAGE -->
+
+            <div v-else>
+
+                <h1>Checkout Page</h1>
+
+                <button @click="toggleCheckout">Return To Lessons</button>
+
+                <br><br>
+
+                <p>First Name:<input v-model="order.firstname"></p>
+
+                <p>Last Name:<input v-model="order.lastname"></p>
+
+                <p>Telephone:<input v-model="order.telephone"></p>
+
+                <h2>Summary</h2>
+
+                <p>
+                    {{ order.firstname }}
+                    {{ order.lastname }}
+                </p>
+                <p>Telephone:{{ order.telephone }}</p>
+
+                <button
+                    @click="postName"
+                    :disabled="
+                        !order.firstname.trim() ||
+                        !order.lastname.trim() ||
+                        !order.telephone.trim()
+                    ">
+                    Confirm Order
+                </button>
+
+                <br><br>
+
+                <h2>Cart</h2>
+
+                <ul>
+                    <li
+                        v-for="item in cart">
+                        id: {{ item }}
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+        <script>
+
+            const LESSON_URL = "http://localhost:3200";
+            const myApp = Vue.createApp({
+                data(){
+                    return{
+                        message:"Welcome to Lesson Store",
+                        lessons:[],
+                        cart:[],
+                        showLesson:true,
+                        order:{
+                            firstname:"",
+                            lastname:"",
+                            telephone:""
+                        }
+                    }
+                },
+
+                created(){
+                    this.fetchData();
+                },
+
+                computed:{
+                    cartItemCount(){
+                        return this.cart.length;
+                    },
+
+                    sortedLessons(){
+                        function compare(a,b){
+                            if(a.id > b.id)
+                                return 1;
+                            if(a.id < b.id)
+                                return -1;
+                            return 0;
+                        }
+                        return this.lessons.sort(compare);
+                    }
+                },
+
+                methods:{
+                    addItem(lesson){
+                        this.cart.push(lesson.id);
+                    },
+
+                    toggleCheckout(){
+                        if(
+                            this.showLesson &&
+                            this.cartItemCount === 0
+                        ){
+                            return;
+                        }
+                        this.showLesson =!this.showLesson;
+                    },
+
+                    canAddToCart(lesson){
+                        return (
+                            this.cartLessonCount(
+                                lesson.id
+                            )
+                            < lesson.spaces
+                        );
+                    },
+
+                    cartLessonCount(id){
+                        let count = 0;
+                        for(
+                            let i = 0;
+                            i < this.cart.length;
+                            i++
+                        ){
+                            if(
+                                this.cart[i] === id
+                            ){
+                                count++;
+                            }
+
+                        }
+                        return count;
+                    },
+
+                    async fetchData(){
+                        try{
+                            const url = LESSON_URL + "/lessons";
+                            const response = await fetch(url);
+
+                            if(!response.ok){
+                                throw new Error(`HTTP error ${response.status}`);
+                            }
+                            this.lessons = await response.json();
+                            console.log(this.lessons);
+                        }
+                        catch(error){
+                            console.log(error);
+                        }
+                    },
+
+                }
+            });
+
+        myApp.mount("#lessonstore");
+
+        </script>
+
+    </body>
+</html>
