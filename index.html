@@ -101,7 +101,7 @@
 
                     <p>Price: Rs {{ lesson.price }}</p>
 
-                    <p>{{ lesson.spaces }} spaces available</p>
+                    <p>{{ lesson.spaces - cartLessonCount(lesson.id) }} spaces available</p>
 
                     <p>{{ cartLessonCount(lesson.id) }} in cart</p>
 
@@ -121,11 +121,11 @@
 
                 <br><br>
 
-                <p>First Name:<input v-model="order.firstname"></p>
+                <p>First Name: <input v-model="order.firstname"></p>
 
-                <p>Last Name:<input v-model="order.lastname"></p>
+                <p>Last Name: <input v-model="order.lastname"></p>
 
-                <p>Telephone:<input v-model="order.telephone"></p>
+                <p>Telephone: <input v-model="order.telephone"></p>
 
                 <h2>Summary</h2>
 
@@ -147,14 +147,20 @@
 
                 <br><br>
 
-                <h2>Cart</h2>
+                <div v-for="item in cartItems"
+             :key="item.id"
+             class="cart-item">
 
-                <ul>
-                    <li
-                        v-for="item in cart">
-                        id: {{ item }}
-                    </li>
-                </ul>
+            <strong>{{ item.subject }}</strong>
+            — {{ item.quantity }} space(s)
+            × Rs. {{ item.price }}
+            = Rs. {{ item.quantity * item.price }}
+
+            </div>
+
+            <p class="total">
+                Total: Rs. {{ cartTotal }}
+            </p>
             </div>
 
         </div>
@@ -188,6 +194,15 @@
                         return this.cart.length;
                     },
 
+                    cartItems(){
+                        return this.lessons
+                            .map(lesson => ({
+                                ...lesson,
+                                quantity: this.cartLessonCount(lesson.id)
+                            }))
+                            .filter(item => item.quantity > 0);
+                    },
+
                     // Sort lessons based on selected attribute and order
                     sortedLessons() {
                         return [...this.lessons].sort((a, b) => {
@@ -212,9 +227,16 @@
                             return 0;
                         });
                     },
+                    cartTotal() {
+                        return this.cartItems.reduce(
+                            (total, item) => total + item.quantity * item.price,
+                            0
+                        );
+                    }
                 },
 
                 methods:{
+                    
                     addItem(lesson){
                         this.cart.push(lesson.id);
                     },
